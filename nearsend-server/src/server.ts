@@ -1,6 +1,7 @@
+import "dotenv/config";
 import express from "express";
 import http from "http";
-import { Server, Socket } from "socket.io";
+import { Server } from "socket.io";
 
 // —— 1. 定义与 DOM 无关的 WebRTC 类型 (避免 Node环境 报错)
 interface SimpleSessionDescription {
