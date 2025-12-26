@@ -28,6 +28,7 @@ interface ServerToClientEvents {
     "peer-joined": (data: { id: string; name: string }) => void;
     "peer-left": (id: string) => void;
     "peer-list": (data: { id: string; name: string }[]) => void;
+    "socket-id": (id: string) => void;
     "signal": (data: { from: string; target: string; payload: SignalPayload }) => void;
     "error-message": (data: { message: string }) => void;
 }
@@ -74,6 +75,9 @@ io.on("connection", (socket) => {
         if (!data.name || typeof data.name !== "string") {
             return;
         }
+
+        // 发送给当前用户其 socketID
+        socket.emit("socket-id", socket.id);
 
         // 将状态直接存储在 socket.data 中 (Socket.IO 内置特性)，也可以继续用 Map
         socket.data.name = data.name;
