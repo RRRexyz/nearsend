@@ -104,7 +104,7 @@ io.on("connection", (socket) => {
         const targetSocket = io.sockets.sockets.get(data.target);
 
         if (targetSocket) {
-            console.log(`[INFO] Relaying signal from ${socket.id} to ${data.target}`);
+            console.log(`[INFO] Relaying signal (${data.payload.type}) from ${socket.id} to ${data.target}`);
             io.to(data.target).emit("signal", {
                 from: socket.id,
                 target: data.target,

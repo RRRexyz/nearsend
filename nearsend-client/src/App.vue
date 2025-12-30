@@ -12,6 +12,7 @@ const socket = io("http://localhost:3000");
 const username = ref<string>("");
 const socketID = ref<string>("");
 const peers = ref<Peer[]>([]);
+const connectedPeers = ref<Set<string>>(new Set());
 let webrtcManager: WebRTCManager;
 
 socket.on('socket-id', (id: string) => {
@@ -20,27 +21,37 @@ socket.on('socket-id', (id: string) => {
 
 socket.on('peer-list', (list: Peer[]) => {
     peers.value = list;
-    console.log("peers:", peers.value);
+    // console.log("peers:", peers.value);
 });
 
 socket.on('peer-joined', (peer: Peer) => {
     peers.value.push(peer);
-    console.log("peers:", peers.value);
+    // console.log("peers:", peers.value);
 });
 
 socket.on('peer-left', (id: string) => {
     peers.value = peers.value.filter(p => p.id !== id);
-    console.log("peers:", peers.value);
+    // console.log("peers:", peers.value);
 });
 
 onMounted(() => {
     username.value = 'Device ' + Math.random().toString(36).substring(5, 10);
     socket.emit("join", { name: username.value });
-    webrtcManager = new WebRTCManager(socket);
+    webrtcManager = new WebRTCManager(socket, (peerId, state) => {
+        if (state === 'connected') {
+            connectedPeers.value.add(peerId);
+        } else if (state === 'disconnected' || state === 'failed' || state === 'closed') {
+            connectedPeers.value.delete(peerId);
+        }
+    });
 });
 
-const connectToPeer = (peerId: string) => {
-    webrtcManager.startCall(peerId);
+const toggleConnection = (peerId: string) => {
+    if (connectedPeers.value.has(peerId)) {
+        webrtcManager.disconnect(peerId);
+    } else {
+        webrtcManager.startCall(peerId);
+    }
 };
 </script>
 
@@ -51,7 +62,9 @@ const connectToPeer = (peerId: string) => {
     <ul>
         <li v-for="peer in peers" :key="peer.id">
             {{ peer.name }} ({{ peer.id }})
-            <button @click="connectToPeer(peer.id)">Connect</button>
+            <button @click="toggleConnection(peer.id)">
+                {{ connectedPeers.has(peer.id) ? 'Disconnect' : 'Connect' }}
+            </button>
         </li>
     </ul>
 </template>
