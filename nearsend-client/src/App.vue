@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { io } from "socket.io-client";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { WebRTCManager } from "./webrtc";
 
 interface Peer {
@@ -13,6 +13,21 @@ const username = ref<string>("");
 const socketID = ref<string>("");
 const peers = ref<Peer[]>([]);
 const connectedPeers = ref<Set<string>>(new Set());
+
+const displayedPrompt = computed(() => {
+    if (connectedPeers.value.size > 0) {
+        return "Your target peer: ";
+    }
+    return "Other connected peers: ";
+});
+
+const displayedPeers = computed(() => {
+    if (connectedPeers.value.size > 0) {
+        return peers.value.filter(p => connectedPeers.value.has(p.id));
+    }
+    return peers.value;
+});
+
 let webrtcManager: WebRTCManager;
 
 socket.on('socket-id', (id: string) => {
@@ -58,9 +73,9 @@ const toggleConnection = (peerId: string) => {
 <template>
     <p>Your username: {{ username }}</p>
     <p>Your socket ID: {{ socketID }}</p>
-    <p>Other connected peers:</p>
+    <p>{{ displayedPrompt }}</p>
     <ul>
-        <li v-for="peer in peers" :key="peer.id">
+        <li v-for="peer in displayedPeers" :key="peer.id">
             {{ peer.name }} ({{ peer.id }})
             <button @click="toggleConnection(peer.id)">
                 {{ connectedPeers.has(peer.id) ? 'Disconnect' : 'Connect' }}
