@@ -11,10 +11,12 @@ export class WebRTCManager {
     peerConnections: Map<string, RTCPeerConnection> = new Map();
     dataChannels: Map<string, RTCDataChannel> = new Map();
     onConnectionStateChange?: (peerId: string, state: RTCPeerConnectionState) => void;
+    onDataChannel?: (channel: RTCDataChannel) => void;
 
-    constructor(socket: Socket, onConnectionStateChange?: (peerId: string, state: RTCPeerConnectionState) => void) {
+    constructor(socket: Socket, onConnectionStateChange?: (peerId: string, state: RTCPeerConnectionState) => void, onDataChannel?: (channel: RTCDataChannel) => void) {
         this.socket = socket;
         this.onConnectionStateChange = onConnectionStateChange;
+        this.onDataChannel = onDataChannel;
         this.setupSocketListeners();
     }
 
@@ -83,6 +85,10 @@ export class WebRTCManager {
 
     private setupDataChannel(targetId: string, dc: RTCDataChannel) {
         this.dataChannels.set(targetId, dc);
+
+        if (this.onDataChannel) {
+            this.onDataChannel(dc);
+        }
 
         dc.onopen = () => {
             // console.log(`DataChannel with ${targetId} is OPEN`);

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { io } from "socket.io-client";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, shallowRef } from "vue";
 import { WebRTCManager } from "./webrtc";
+import { FileSend } from "./filesend";
 
 interface Peer {
     id: string;
@@ -13,6 +14,8 @@ const username = ref<string>("");
 const socketID = ref<string>("");
 const peers = ref<Peer[]>([]);
 const connectedPeers = ref<Set<string>>(new Set());
+let webrtcManager: WebRTCManager;
+const fileSend = shallowRef<FileSend | null>(null);
 
 const displayedPrompt = computed(() => {
     if (connectedPeers.value.size > 0) {
@@ -27,8 +30,6 @@ const displayedPeers = computed(() => {
     }
     return peers.value;
 });
-
-let webrtcManager: WebRTCManager;
 
 socket.on('socket-id', (id: string) => {
     socketID.value = id;
@@ -57,7 +58,12 @@ onMounted(() => {
             connectedPeers.value.add(peerId);
         } else if (state === 'disconnected' || state === 'failed' || state === 'closed') {
             connectedPeers.value.delete(peerId);
+            if (fileSend.value) {
+                fileSend.value = null;
+            }
         }
+    }, channel => {
+        fileSend.value = new FileSend(channel);
     });
 });
 
@@ -68,6 +74,14 @@ const toggleConnection = (peerId: string) => {
         webrtcManager.startCall(peerId);
     }
 };
+
+const onFileChange = (event: Event) => {
+    fileSend.value?.handleFileSelect(event);
+}
+
+const inputFileDisabled = computed(() => {
+    return !fileSend.value || !fileSend.value.dataChannel.value || fileSend.value.isSending.value;
+});
 </script>
 
 <template>
@@ -82,6 +96,9 @@ const toggleConnection = (peerId: string) => {
             </button>
         </li>
     </ul>
+    <div>
+        <input type="file" @change="onFileChange" :disabled="inputFileDisabled" />
+    </div>
 </template>
 
 <style scoped></style>
