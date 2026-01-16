@@ -75,8 +75,20 @@ const toggleConnection = (peerId: string) => {
     }
 };
 
-const onFileChange = (event: Event) => {
-    fileSend.value?.handleFileSelect(event);
+const selectedFile = shallowRef<File | null>(null);
+
+const handleFileSelect = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    selectedFile.value = target.files?.item(0) ?? null;
+    if (fileSend.value) {
+        fileSend.value.hasSent.value = false;
+    }
+}
+
+const sendFile = async () => {
+    if (selectedFile.value && fileSend.value) {
+        await fileSend.value.sendFile(selectedFile.value);
+    }
 }
 
 const inputFileDisabled = computed(() => {
@@ -97,7 +109,15 @@ const inputFileDisabled = computed(() => {
         </li>
     </ul>
     <div>
-        <input type="file" @change="onFileChange" :disabled="inputFileDisabled" />
+        <input type="file" @change="handleFileSelect" :disabled="inputFileDisabled" />
+        <button @click="sendFile" :disabled="inputFileDisabled || !selectedFile">发送</button>
+    </div>
+    <div v-if="(fileSend?.isSending.value || fileSend?.hasSent.value) && selectedFile">
+        <p>正在发送：{{ (fileSend.sendingProgress.current / 1024 / 1024).toFixed(3) }} MB / {{
+            (fileSend.sendingProgress.total / 1024 /
+                1024).toFixed(3) }} MB</p>
+        <progress :value="fileSend.sendingProgress.percentage" max="100"></progress>
+        <a>{{ fileSend.sendingProgress.percentage }}%</a>
     </div>
 </template>
 

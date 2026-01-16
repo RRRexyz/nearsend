@@ -19,6 +19,7 @@ export class FileSend {
     dataChannel = ref<RTCDataChannel | null>(null);
     sendingProgress: SendProgress = reactive({ current: 0, total: 0, percentage: 0 });
     isSending = ref<boolean>(false);
+    hasSent = ref<boolean>(false);
     static readonly CHUNK_SIZE = 16 * 1024; // 16KB 每片
     static readonly BUFFER_THRESHOLD = 256 * 1024; // 256KB 缓冲区阈值
 
@@ -91,6 +92,7 @@ export class FileSend {
             // console.log(`Sent ${this.sendingProgress.percentage}%`);
         }
         this.isSending.value = false;
+        this.hasSent.value = true;
         console.log("File send complete.");
     }
 }
