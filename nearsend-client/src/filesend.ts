@@ -1,7 +1,7 @@
 import { ref, reactive } from 'vue';
 
 // 文件元数据接口
-interface FileMetadata {
+export interface FileMetadata {
     type: 'metadata';
     name: string;
     size: number;
@@ -9,7 +9,7 @@ interface FileMetadata {
 }
 
 // 发送进度接口
-interface SendProgress {
+export interface SendProgress {
     current: number;
     total: number;
     percentage: number;
