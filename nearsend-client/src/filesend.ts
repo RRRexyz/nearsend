@@ -20,6 +20,7 @@ export class FileSend {
     sendingProgress: SendProgress = reactive({ current: 0, total: 0, percentage: 0 });
     isSending = ref<boolean>(false);
     hasSent = ref<boolean>(false);
+    filename = ref<string>('');
     static readonly CHUNK_SIZE = 16 * 1024; // 16KB 每片
     static readonly BUFFER_THRESHOLD = 256 * 1024; // 256KB 缓冲区阈值
 
@@ -61,6 +62,7 @@ export class FileSend {
     public async sendFile(file: File) {
         if (!this.dataChannel) throw new Error("Data channel is not established.");
         this.isSending.value = true;
+        this.filename.value = file.name;
 
         // 1. 发送文件元数据(转为JSON字符串)
         const metadata: FileMetadata = {

@@ -54,7 +54,35 @@ export class FileReceive {
         // 3. 检查是否接收完毕
         if (this.receiveProgress.current >= this.receiveProgress.total) {
             console.log('[Receiver] 文件接收完毕，开始组装...');
+            this.assembleAndDownloadFile();
         }
     }
 
+    /// 组装数据块并触发下载
+    assembleAndDownloadFile() {
+        // 1. 使用 Blob 构造函数合并所有 ArrayBuffer
+        const blob = new Blob(this.buffer);
+
+        // 2. 创建下载链接
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = this.filename.value;
+
+        // 3. 触发点击
+        document.body.appendChild(a);
+        a.click();
+
+        // 4. 清理工作 (非常重要，防止内存泄漏)
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url); // 释放内存
+
+            // 重置状态
+            this.isReceiving.value = false;
+            this.buffer = [];
+            this.hasReceived.value = true;
+        }, 100);
+    }
 }

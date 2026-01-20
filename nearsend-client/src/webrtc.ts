@@ -86,9 +86,7 @@ export class WebRTCManager {
     private setupDataChannel(targetId: string, dc: RTCDataChannel) {
         this.dataChannels.set(targetId, dc);
 
-        if (this.onDataChannel) {
-            this.onDataChannel(dc);
-        }
+        dc.binaryType = "arraybuffer";
 
         dc.onopen = () => {
             // console.log(`DataChannel with ${targetId} is OPEN`);
@@ -96,13 +94,13 @@ export class WebRTCManager {
             dc.send(`Hello from ${this.socket.id}`);
         };
 
-        dc.onmessage = (e) => {
-            // console.log(`Message from ${targetId}: ${e.data}`);
-        };
-
         dc.onclose = () => {
             // console.log(`DataChannel with ${targetId} is CLOSED`);
         };
+
+        if (this.onDataChannel) {
+            this.onDataChannel(dc);
+        }
     }
 
     // 主动发起连接

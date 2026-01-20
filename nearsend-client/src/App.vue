@@ -3,6 +3,7 @@ import { io } from "socket.io-client";
 import { computed, onMounted, ref, shallowRef } from "vue";
 import { WebRTCManager } from "./webrtc";
 import { FileSend } from "./filesend";
+import { FileReceive } from "./receive";
 
 interface Peer {
     id: string;
@@ -16,7 +17,7 @@ const peers = ref<Peer[]>([]);
 const connectedPeers = ref<Set<string>>(new Set());
 let webrtcManager: WebRTCManager;
 const fileSend = shallowRef<FileSend | null>(null);
-
+const fileReceive = shallowRef<FileReceive | null>(null);
 const displayedPrompt = computed(() => {
     if (connectedPeers.value.size > 0) {
         return "Your target peer: ";
@@ -61,9 +62,16 @@ onMounted(() => {
             if (fileSend.value) {
                 fileSend.value = null;
             }
+            if (fileReceive.value) {
+                fileReceive.value = null;
+            }
         }
     }, channel => {
         fileSend.value = new FileSend(channel);
+        fileReceive.value = new FileReceive(channel);
+        channel.onmessage = (event) => {
+            fileReceive.value?.handleMessage(event);
+        };
     });
 });
 
@@ -112,12 +120,18 @@ const inputFileDisabled = computed(() => {
         <input type="file" @change="handleFileSelect" :disabled="inputFileDisabled" />
         <button @click="sendFile" :disabled="inputFileDisabled || !selectedFile">发送</button>
     </div>
-    <div v-if="(fileSend?.isSending.value || fileSend?.hasSent.value) && selectedFile">
-        <p>正在发送：{{ (fileSend.sendingProgress.current / 1024 / 1024).toFixed(3) }} MB / {{
+    <div v-if="selectedFile && (fileSend?.isSending.value || fileSend?.hasSent.value)">
+        <p>正在发送：{{ fileSend.filename }} {{ (fileSend.sendingProgress.current / 1024 / 1024).toFixed(3) }} MB / {{
             (fileSend.sendingProgress.total / 1024 /
                 1024).toFixed(3) }} MB</p>
         <progress :value="fileSend.sendingProgress.percentage" max="100"></progress>
         <a>{{ fileSend.sendingProgress.percentage }}%</a>
+    </div>
+    <div v-if="fileReceive?.isReceiving.value || fileReceive?.hasReceived.value">
+        <p>正在接收：{{ fileReceive.filename }} {{ (fileReceive.receiveProgress.current / 1024 / 1024).toFixed(3) }} MB /
+            {{ (fileReceive.receiveProgress.total / 1024 / 1024).toFixed(3) }} MB</p>
+        <progress :value="fileReceive.receiveProgress.percentage" max="100"></progress>
+        <a>{{ fileReceive.receiveProgress.percentage }}%</a>
     </div>
 </template>
 
