@@ -59,7 +59,7 @@ export class FileReceive {
     }
 
     /// 组装数据块并触发下载
-    assembleAndDownloadFile() {
+    private assembleAndDownloadFile() {
         // 1. 使用 Blob 构造函数合并所有 ArrayBuffer
         const blob = new Blob(this.buffer);
 
