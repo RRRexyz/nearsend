@@ -25,6 +25,7 @@ export class FileReceive {
 
                 // 初始化接收状态
                 this.isReceiving.value = true;
+                this.hasReceived.value = false;
                 this.filename.value = metadata.name;
                 this.receiveProgress.total = metadata.size;
                 this.receiveProgress.current = 0;
