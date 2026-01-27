@@ -10,9 +10,9 @@ export interface FileMetadata {
 
 // 发送进度接口
 export interface SendProgress {
-    current: number;
-    total: number;
-    percentage: number;
+    current: number; // 当前已发送字节数 (B)
+    total: number; // 文件总字节数 (B)
+    percentage: number; // 发送百分比 (0-100)
 }
 
 export class FileSend {

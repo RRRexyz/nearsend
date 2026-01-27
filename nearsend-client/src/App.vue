@@ -114,6 +114,54 @@ const ifSending = computed(() => {
 const ifReceiving = computed(() => {
     return fileReceive.value?.isReceiving.value || fileReceive.value?.hasReceived.value;
 });
+
+const KB = 1024;
+const MB = 1024 * 1024;
+const GB = 1024 * 1024 * 1024;
+
+const fileSendProgress = computed(() => {
+    let unit = 'B';
+    let current = fileSend.value?.sendingProgress.current ?? 0;
+    let total = fileSend.value?.sendingProgress.total ?? 0;
+    if (total < KB) {
+        unit = 'B';
+    } else if (total < MB) {
+        unit = 'KB';
+        current = current / KB;
+        total = total / KB;
+    } else if (total < GB) {
+        unit = 'MB';
+        current = current / MB;
+        total = total / MB;
+    } else {
+        unit = 'GB';
+        current = current / GB;
+        total = total / GB;
+    }
+    return `${current.toFixed(3)} ${unit} / ${total.toFixed(3)} ${unit}`;
+});
+
+const fileReceiveProgress = computed(() => {
+    let unit = 'B';
+    let current = fileReceive.value?.receiveProgress.current ?? 0;
+    let total = fileReceive.value?.receiveProgress.total ?? 0;
+    if (total < KB) {
+        unit = 'B';
+    } else if (total < MB) {
+        unit = 'KB';
+        current = current / KB;
+        total = total / KB;
+    } else if (total < GB) {
+        unit = 'MB';
+        current = current / MB;
+        total = total / MB;
+    } else {
+        unit = 'GB';
+        current = current / GB;
+        total = total / GB;
+    }
+    return `${current.toFixed(3)} ${unit} / ${total.toFixed(3)} ${unit}`;
+});
 </script>
 
 <template>
@@ -133,16 +181,12 @@ const ifReceiving = computed(() => {
         <button @click="sendFile" :disabled="sendFileDisabled">发送</button>
     </div>
     <div v-if="ifSending">
-        <p>正在发送：{{ fileSend?.filename }} {{ ((fileSend?.sendingProgress.current ?? 0) / 1024 / 1024).toFixed(3) }} MB / {{
-            ((fileSend?.sendingProgress.total ?? 0) / 1024 /
-                1024).toFixed(3) }} MB</p>
+        <p>正在发送：{{ fileSend?.filename }} {{ fileSendProgress }}</p>
         <progress :value="fileSend?.sendingProgress.percentage" max="100"></progress>
         <a>{{ fileSend?.sendingProgress.percentage }}%</a>
     </div>
     <div v-if="ifReceiving">
-        <p>正在接收：{{ fileReceive?.filename }} {{ ((fileReceive?.receiveProgress.current ?? 0) / 1024 / 1024).toFixed(3) }}
-            MB /
-            {{ ((fileReceive?.receiveProgress.total ?? 0) / 1024 / 1024).toFixed(3) }} MB</p>
+        <p>正在接收：{{ fileReceive?.filename }} {{ fileReceiveProgress }}</p>
         <progress :value="fileReceive?.receiveProgress.percentage" max="100"></progress>
         <a>{{ fileReceive?.receiveProgress.percentage }}%</a>
     </div>
