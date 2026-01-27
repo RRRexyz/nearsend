@@ -108,7 +108,7 @@ const sendFileDisabled = computed(() => {
 });
 
 const ifSending = computed(() => {
-    return selectedFile && (fileSend.value?.isSending.value || fileSend.value?.hasSent.value);
+    return selectedFile.value && (fileSend.value?.isSending.value || fileSend.value?.hasSent.value);
 });
 
 const ifReceiving = computed(() => {
