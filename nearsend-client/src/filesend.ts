@@ -1,32 +1,61 @@
-import { ref, reactive } from 'vue';
-
-// 文件元数据接口
-export interface FileMetadata {
-    type: 'metadata';
-    name: string;
-    size: number;
-    fileType: string;
-}
-
-// 发送进度接口
-export interface SendProgress {
-    current: number; // 当前已发送字节数 (B)
-    total: number; // 文件总字节数 (B)
-    percentage: number; // 发送百分比 (0-100)
-}
+import { ref, reactive, computed } from 'vue';
+import { type FileMetadata, type TransmitProgress } from "./common";
 
 export class FileSend {
     dataChannel = ref<RTCDataChannel | null>(null);
-    sendingProgress: SendProgress = reactive({ current: 0, total: 0, percentage: 0 });
+    sendingProgress: TransmitProgress = reactive({ current: 0, total: 0, percentage: 0 });
     isSending = ref<boolean>(false);
     hasSent = ref<boolean>(false);
     filename = ref<string>('');
+    selectedFile = ref<File | null>(null);
+
     static readonly CHUNK_SIZE = 16 * 1024; // 16KB 每片
     static readonly BUFFER_THRESHOLD = 256 * 1024; // 256KB 缓冲区阈值
 
     constructor(dataChannel: RTCDataChannel) {
         this.dataChannel.value = dataChannel;
     }
+
+    public readonly formattedProgress = computed(() => {
+        const KB = 1024;
+        const MB = 1024 * 1024;
+        const GB = 1024 * 1024 * 1024;
+        let unit = 'B';
+        let current = this.sendingProgress.current ?? 0;
+        let total = this.sendingProgress.total ?? 0;
+        
+        if (total === 0) return `0.000 B / 0.000 B`;
+
+        if (total < KB) {
+            unit = 'B';
+        } else if (total < MB) {
+            unit = 'KB';
+            current = current / KB;
+            total = total / KB;
+        } else if (total < GB) {
+            unit = 'MB';
+            current = current / MB;
+            total = total / MB;
+        } else {
+            unit = 'GB';
+            current = current / GB;
+            total = total / GB;
+        }
+        return `${current.toFixed(3)} ${unit} / ${total.toFixed(3)} ${unit}`;
+    });
+
+    public readonly inputFileDisabled = computed(() => {
+        return !this.dataChannel.value || this.isSending.value;
+    });
+
+    public readonly sendFileDisabled = computed(() => {
+        return this.inputFileDisabled.value || !this.selectedFile.value || this.hasSent.value;
+    });
+    
+    public readonly ifSending = computed(() => {
+      // 只有在选择了文件的情况下，才显示发送进度或结果
+      return this.selectedFile.value && (this.isSending.value || this.hasSent.value);
+    });
 
     /// 等待缓冲区排空，这是一个辅助函数，防止发送过快导致内存溢出 
     private waitForBufferDrain(channel: RTCDataChannel): Promise<void> {
@@ -45,16 +74,15 @@ export class FileSend {
     }
 
     /// 处理文件选择
-    public async handleFileSelect(event: Event) {
+    public handleFileSelect(event: Event) {
         const target = event.target as HTMLInputElement;
-        const file = target.files?.[0];
-        if (!file || !this.dataChannel) return;
-        try {
-            await this.sendFile(file);
-        } catch (error) {
-            console.error("Error sending file:", error);
-        } finally {
-            target.value = ""; // 重置文件输入
+        this.selectedFile.value = target.files?.item(0) ?? null;
+        this.hasSent.value = false;
+    }
+
+    public async sendCurrentFile() {
+        if (this.selectedFile.value) {
+            await this.sendFile(this.selectedFile.value);
         }
     }
 

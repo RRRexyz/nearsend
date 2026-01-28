@@ -1,9 +1,9 @@
-import { ref, reactive } from 'vue';
-import { type FileMetadata, type SendProgress } from "./filesend";
+import { ref, reactive, computed } from 'vue';
+import { type FileMetadata, type TransmitProgress } from "./common";
 
 export class FileReceive {
     dataChannel = ref<RTCDataChannel | null>(null);
-    receiveProgress: SendProgress = reactive({ current: 0, total: 0, percentage: 0 });
+    receiveProgress: TransmitProgress = reactive({ current: 0, total: 0, percentage: 0 });
     isReceiving = ref<boolean>(false);
     hasReceived = ref<boolean>(false);
     filename = ref<string>('');
@@ -12,6 +12,38 @@ export class FileReceive {
     constructor(dataChannel: RTCDataChannel) {
         this.dataChannel.value = dataChannel;
     }
+
+    public readonly formattedProgress = computed(() => {
+        const KB = 1024;
+        const MB = 1024 * 1024;
+        const GB = 1024 * 1024 * 1024;
+        let unit = 'B';
+        let current = this.receiveProgress.current ?? 0;
+        let total = this.receiveProgress.total ?? 0;
+
+        if (total === 0) return `0.000 B / 0.000 B`;
+
+        if (total < KB) {
+            unit = 'B';
+        } else if (total < MB) {
+            unit = 'KB';
+            current = current / KB;
+            total = total / KB;
+        } else if (total < GB) {
+            unit = 'MB';
+            current = current / MB;
+            total = total / MB;
+        } else {
+            unit = 'GB';
+            current = current / GB;
+            total = total / GB;
+        }
+        return `${current.toFixed(3)} ${unit} / ${total.toFixed(3)} ${unit}`;
+    });
+
+    public readonly ifReceiving = computed(() => {
+        return this.isReceiving.value || this.hasReceived.value;
+    });
 
 
     /// 核心消息处理函数根据数据类型判断是元数据(字符串)还是文件块(ArrayBuffer)
